@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Commercial Proposal Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --navy:       #1F4E79;
+    --blue:       #2E75B6;
+    --blue-light: #EBF3FB;
+    --blue-mid:   #DDEEFF;
+    --white:      #FFFFFF;
+    --surface:    #F7FAFD;
+    --border:     #D0E3F5;
+    --text:       #1A2A3A;
+    --muted:      #6B88A2;
+    --won-bg:     #E2EFDA; --won-fg:    #375623;
+    --lost-bg:    #FCE4D6; --lost-fg:   #9C0006;
+    --sub-bg:     #FFF2CC; --sub-fg:    #7F6000;
+    --pre-bg:     #EEEDFE; --pre-fg:    #3C3489;
+    --new-bg:     #DDEEFF; --new-fg:    #0C447C;
+    --po-bg:      #E1F5EE; --po-fg:     #085041;
+    --pend-bg:    #FFF2CC; --pend-fg:   #7F6000;
+    --hold-bg:    #FCE4D6; --hold-fg:   #9C0006;
+    --red:        #C0392B;
+    --amber:      #E67E22;
+    --radius:     6px;
+    --shadow:     0 1px 4px rgba(31,78,121,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+    min-height: 100vh;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    background: var(--navy);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 52px;
+    position: sticky; top: 0; z-index: 50;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  }
+  .topbar-left { display: flex; align-items: center; gap: 16px; }
+  .topbar-title { color: #fff; font-size: 15px; font-weight: 700; letter-spacing: .3px; }
+  .topbar-title span { color: #90C8F6; font-weight: 400; font-size: 12px; margin-left: 8px; }
+  .year-pill {
+    display: flex; align-items: center; gap: 2px;
+    background: rgba(255,255,255,0.12); border-radius: 20px;
+    padding: 3px 6px;
+  }
+  .year-pill button {
+    background: none; border: none; color: #90C8F6; cursor: pointer;
+    font-size: 16px; line-height: 1; padding: 0 3px; border-radius: 4px;
+  }
+  .year-pill button:hover { background: rgba(255,255,255,0.15); }
+  .year-pill span { color: #fff; font-size: 13px; font-weight: 600; min-width: 36px; text-align: center; }
+  .topbar-right { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 14px; border-radius: var(--radius);
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    border: 1px solid transparent; transition: all .15s;
+    font-family: inherit;
+  }
+  .btn-ghost { background: rgba(255,255,255,0.12); color: #fff; border-color: rgba(255,255,255,0.2); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.22); }
+  .btn-accent { background: #2E75B6; color: #fff; border-color: #2E75B6; }
+  .btn-accent:hover { background: #1F5F99; }
+  .btn-primary { background: #fff; color: var(--navy); font-weight: 600; }
+  .btn-primary:hover { background: #EBF3FB; }
+  .btn-danger { background: none; color: #C0392B; border-color: #C0392B; }
+  .btn-danger:hover { background: #FCE4D6; }
+  .btn-save { background: var(--navy); color: #fff; }
+  .btn-save:hover { background: #163A5E; }
+
+  /* ── MAIN ── */
+  .main { padding: 20px 24px; }
+
+  /* ── STAT CARDS ── */
+  .stats { display: grid; grid-template-columns: repeat(6,1fr); gap: 10px; margin-bottom: 18px; }
+  .stat-card {
+    background: var(--white); border-radius: var(--radius);
+    border: 1px solid var(--border); padding: 14px 16px;
+    box-shadow: var(--shadow);
+  }
+  .stat-label { font-size: 10px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .stat-val { font-size: 22px; font-weight: 700; color: var(--text); }
+  .stat-val.c-blue   { color: #1F4E79; }
+  .stat-val.c-amber  { color: #BA7517; }
+  .stat-val.c-green  { color: #375623; }
+  .stat-val.c-purple { color: #534AB7; }
+  .stat-val.c-teal   { color: #085041; font-size: 16px; }
+
+  /* ── TABS ── */
+  .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 14px; }
+  .tab {
+    padding: 8px 18px; font-size: 12px; font-weight: 500; cursor: pointer;
+    border: none; background: none; color: var(--muted);
+    border-bottom: 2px solid transparent; margin-bottom: -2px;
+    font-family: inherit; transition: all .15s;
+  }
+  .tab:hover { color: var(--navy); }
+  .tab.active { color: var(--navy); border-bottom-color: var(--navy); font-weight: 600; }
+  .tab-badge {
+    background: #E24B4A; color: #fff; border-radius: 10px;
+    padding: 1px 5px; font-size: 10px; margin-left: 4px;
+  }
+
+  /* ── TABLE ── */
+  .section { display: none; }
+  .section.active { display: block; }
+  .table-wrap {
+    background: var(--white); border-radius: var(--radius);
+    border: 1px solid var(--border); overflow-x: auto;
+    box-shadow: var(--shadow);
+  }
+  .hint { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 11.5px; table-layout: fixed; min-width: 1200px; }
+  th {
+    background: var(--navy); padding: 9px 10px;
+    text-align: left; font-weight: 600; font-size: 10.5px;
+    color: #C8DFEF; white-space: nowrap;
+    border-right: 1px solid rgba(255,255,255,0.08);
+    position: sticky; top: 52px;
+  }
+  th:last-child { border-right: none; }
+  td {
+    padding: 7px 10px; border-bottom: 1px solid var(--border);
+    color: var(--text); vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr.data-row { cursor: pointer; transition: background .1s; }
+  tr.data-row:hover td { background: var(--blue-light); }
+
+  /* inline select */
+  .inline-sel {
+    font-size: 10.5px; font-weight: 600; border: none;
+    border-radius: 20px; padding: 3px 7px;
+    cursor: pointer; font-family: inherit; outline: none;
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 6px center;
+    padding-right: 20px;
+  }
+  .s-New              { background: var(--new-bg);  color: var(--new-fg); }
+  .s-With-Presales    { background: var(--pre-bg);  color: var(--pre-fg); }
+  .s-Submitted        { background: var(--sub-bg);  color: var(--sub-fg); }
+  .s-Won              { background: var(--won-bg);  color: var(--won-fg); }
+  .s-Lost             { background: var(--lost-bg); color: var(--lost-fg); }
+  .po-PO-Received     { background: var(--po-bg);   color: var(--po-fg); }
+  .po-Pending         { background: var(--pend-bg); color: var(--pend-fg); }
+  .po-On-Hold         { background: var(--hold-bg); color: var(--hold-fg); }
+  .pr-Draft           { background: var(--pre-bg);  color: var(--pre-fg); }
+  .pr-Under-review    { background: var(--sub-bg);  color: var(--sub-fg); }
+  .pr-Approved        { background: var(--po-bg);   color: var(--po-fg); }
+  .pr-Sent-to-client  { background: var(--new-bg);  color: var(--new-fg); }
+  .pr-Revision-requested { background: var(--lost-bg); color: var(--lost-fg); }
+  .pr-Final           { background: var(--won-bg);  color: var(--won-fg); }
+
+  .val-chip { font-size: 10.5px; color: var(--po-fg); background: var(--po-bg); padding: 2px 7px; border-radius: 10px; font-weight: 600; }
+  .deadline-red { color: var(--red); font-size: 10px; font-weight: 600; display: block; }
+  .deadline-amber { color: var(--amber); font-size: 10px; font-weight: 600; display: block; }
+  .empty-row td { text-align: center; padding: 3rem; color: var(--muted); }
+
+  /* ── MODAL ── */
+  .overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(15,30,50,0.5); z-index: 100;
+    align-items: flex-start; justify-content: center;
+    padding: 40px 16px; overflow-y: auto;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: var(--white); border-radius: 10px;
+    width: 100%; max-width: 600px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+    overflow: hidden;
+  }
+  .modal-header {
+    background: var(--navy); padding: 16px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .modal-header h3 { color: #fff; font-size: 14px; font-weight: 600; }
+  .modal-close {
+    background: rgba(255,255,255,0.15); border: none; color: #fff;
+    width: 26px; height: 26px; border-radius: 50%;
+    cursor: pointer; font-size: 16px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal-close:hover { background: rgba(255,255,255,0.28); }
+  .modal-body { padding: 20px; }
+  .form-section {
+    font-size: 10px; font-weight: 700; color: var(--navy);
+    text-transform: uppercase; letter-spacing: .8px;
+    margin: 16px 0 10px; padding-bottom: 6px;
+    border-bottom: 2px solid var(--blue-light);
+  }
+  .form-section:first-child { margin-top: 0; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-field { display: flex; flex-direction: column; gap: 5px; }
+  .form-field.full { grid-column: 1 / -1; }
+  .form-field label { font-size: 11px; font-weight: 600; color: var(--muted); }
+  .form-field input,
+  .form-field select,
+  .form-field textarea {
+    font-size: 12px; border: 1.5px solid var(--border);
+    border-radius: var(--radius); padding: 7px 10px;
+    background: var(--white); color: var(--text);
+    font-family: inherit; transition: border-color .15s; outline: none;
+  }
+  .form-field input:focus,
+  .form-field select:focus,
+  .form-field textarea:focus { border-color: var(--blue); }
+  .modal-footer {
+    padding: 14px 20px; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--surface);
+  }
+
+  /* ── ALERTS ── */
+  .alert-section-title {
+    font-size: 12px; font-weight: 600; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .alert-card {
+    background: var(--white); border-radius: var(--radius);
+    border: 1px solid var(--border); padding: 12px 16px;
+    margin-bottom: 8px; box-shadow: var(--shadow);
+    display: flex; justify-content: space-between; align-items: center;
+    border-left-width: 4px;
+  }
+  .alert-card-left { flex: 1; }
+  .alert-card-title { font-size: 13px; font-weight: 600; }
+  .alert-card-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .alert-group { margin-bottom: 20px; }
+
+  /* ── CHARTS ── */
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .chart-card {
+    background: var(--white); border-radius: var(--radius);
+    border: 1px solid var(--border); padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  .chart-card.full { grid-column: 1 / -1; }
+  .chart-title { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 12px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  canvas { display: block; }
+
+  /* ── filter bar ── */
+  .filter-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+  .filter-sel {
+    font-size: 12px; padding: 6px 10px;
+    border: 1.5px solid var(--border); border-radius: var(--radius);
+    background: var(--white); color: var(--text);
+    font-family: inherit; cursor: pointer; outline: none;
+  }
+  .filter-sel:focus { border-color: var(--blue); }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-title">Commercial Proposal Tracker <span>Double-click a row to edit or delete</span></div>
+    <div class="year-pill">
+      <button onclick="changeYear(-1)">&#8249;</button>
+      <span id="yearLabel">2026</span>
+      <button onclick="changeYear(1)">&#8250;</button>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button class="btn btn-ghost" onclick="exportCSV()">&#8659; Export CSV</button>
+    <button class="btn btn-primary" onclick="openModal()">+ Add Inquiry</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- STATS -->
+  <div class="stats" id="stats"></div>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar">
+    <select class="filter-sel" id="filterStatus" onchange="filterStatus=this.value;renderAll()">
+      <option value="">All statuses</option>
+      <option>New</option><option>With Presales</option>
+      <option>Submitted</option><option>Won</option><option>Lost</option>
+    </select>
+    <select class="filter-sel" id="filterNX" onchange="filterNX=this.value;renderAll()">
+      <option value="">All NX employees</option>
+    </select>
+    <select class="filter-sel" id="filterClient" onchange="filterClient=this.value;renderAll()">
+      <option value="">All clients</option>
+    </select>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('tracker',this)">&#9776; Tracker</button>
+    <button class="tab" onclick="switchTab('alerts',this)">&#9888; Alerts <span class="tab-badge" id="alertBadge" style="display:none">0</span></button>
+    <button class="tab" onclick="switchTab('charts',this)">&#9656; Charts</button>
+  </div>
+
+  <!-- TRACKER TAB -->
+  <div class="section active" id="tab-tracker">
+    <div class="table-wrap">
+      <table>
+        <colgroup>
+          <col style="width:82px"><col style="width:76px"><col style="width:160px">
+          <col style="width:110px"><col style="width:96px"><col style="width:96px">
+          <col style="width:76px"><col style="width:100px"><col style="width:82px">
+          <col style="width:82px"><col style="width:100px"><col style="width:108px">
+          <col style="width:100px">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Ref</th><th>Received</th><th>Inquiry Description</th>
+            <th>Client Name</th><th>NX Employee</th><th>Pre Sales</th>
+            <th>Fwd Date</th><th>Status</th><th>Deadline</th>
+            <th>Submitted</th><th>Comm. Value</th>
+            <th>Proposal Status</th><th>PO Status</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ALERTS TAB -->
+  <div class="section" id="tab-alerts">
+    <div id="alertsContent"></div>
+  </div>
+
+  <!-- CHARTS TAB -->
+  <div class="section" id="tab-charts">
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Inquiries by Status</div>
+        <div class="legend" id="statusLegend"></div>
+        <div style="position:relative;height:200px"><canvas id="statusChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Won vs Lost</div>
+        <div class="legend" id="winLegend"></div>
+        <div style="position:relative;height:200px"><canvas id="winChart"></canvas></div>
+      </div>
+      <div class="chart-card full">
+        <div class="chart-title">Inquiries by Month</div>
+        <div style="position:relative;height:180px"><canvas id="monthChart"></canvas></div>
+      </div>
+      <div class="chart-card full">
+        <div class="chart-title">Commercial Value by Month (AED)</div>
+        <div style="position:relative;height:180px"><canvas id="valueChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- MODAL -->
+<div class="overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-title">New Inquiry</h3>
+      <button class="modal-close" onclick="closeModal()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-section">Inquiry Details</div>
+      <div class="form-grid">
+        <div class="form-field"><label>Ref #</label><input type="text" id="f-ref" placeholder="INQ-2026-001"></div>
+        <div class="form-field"><label>Received Date</label><input type="date" id="f-date"></div>
+        <div class="form-field full"><label>Inquiry Description</label><input type="text" id="f-desc" placeholder="Brief description of the inquiry"></div>
+        <div class="form-field"><label>Client Name</label><input type="text" id="f-by" placeholder="Client / company name"></div>
+        <div class="form-field"><label>NX Employee Name</label><input type="text" id="f-nx" placeholder="NX employee handling it"></div>
+      </div>
+      <div class="form-section">Presales</div>
+      <div class="form-grid">
+        <div class="form-field"><label>Forwarded to Pre Sales</label><input type="text" id="f-presales" placeholder="Pre sales contact"></div>
+        <div class="form-field"><label>Pre Sales Forwarded Date</label><input type="date" id="f-fwddate"></div>
+      </div>
+      <div class="form-section">Proposal & Commercial</div>
+      <div class="form-grid">
+        <div class="form-field"><label>Status</label>
+          <select id="f-status"><option>New</option><option>With Presales</option><option>Submitted</option><option>Won</option><option>Lost</option></select>
+        </div>
+        <div class="form-field"><label>Submission Deadline</label><input type="date" id="f-deadline"></div>
+        <div class="form-field"><label>Submitted Date</label><input type="date" id="f-subdate"></div>
+        <div class="form-field"><label>Commercial Value (AED)</label><input type="number" id="f-value" placeholder="0" min="0"></div>
+        <div class="form-field"><label>Proposal Status</label>
+          <select id="f-prop"><option value="">— None —</option><option>Draft</option><option>Under review</option><option>Approved</option><option>Sent to client</option><option>Revision requested</option><option>Final</option></select>
+        </div>
+        <div class="form-field"><label>PO Status</label>
+          <select id="f-po"><option value="">— Not yet —</option><option>Pending</option><option>PO Received</option><option>On Hold</option></select>
+        </div>
+        <div class="form-field"><label>Follow-up Due Date</label><input type="date" id="f-followup"></div>
+        <div class="form-field full"><label>Notes</label><textarea id="f-notes" rows="2" placeholder="Optional remarks…"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="deleteBtn" onclick="deleteEntry()" style="display:none">&#128465; Delete</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-accent" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-save" onclick="saveEntry()">&#10003; Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ── DATA STORE ───────────────────────────────────────────────────────────────
+// localStorage key per year so data persists in the browser
+const STORE_KEY = y => `cpt_data_${y}`;
+
+function loadData(year) {
+  try {
+    const raw = localStorage.getItem(STORE_KEY(year));
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return year == 2026 ? getSeedData() : [];
+}
+function saveData(year, data) {
+  try { localStorage.setItem(STORE_KEY(year), JSON.stringify(data)); } catch(e) {}
+}
+function getSeedData() {
+  return [
+    {id:1,ref:'INQ-2026-001',date:'2026-05-10',desc:'CCTV upgrade for HQ building',by:'Al Futtaim Group',nx:'Ahmed Khan',presales:'Sara Al Mansoori',fwddate:'2026-05-12',status:'Won',deadline:'2026-05-20',subdate:'2026-05-22',value:85000,po:'PO Received',prop:'Final',followup:'',notes:''},
+    {id:2,ref:'INQ-2026-002',date:'2026-05-18',desc:'Access control rollout – 3 sites',by:'Emaar Properties',nx:'Priya Nair',presales:'Khalid Hassan',fwddate:'2026-05-20',status:'Submitted',deadline:'2026-06-05',subdate:'2026-06-01',value:120000,po:'Pending',prop:'Sent to client',followup:'2026-06-15',notes:'Follow up week 24'},
+    {id:3,ref:'INQ-2026-003',date:'2026-06-02',desc:'Network infrastructure assessment',by:'ADNOC Distribution',nx:'Ahmed Khan',presales:'Reem Al Bloushi',fwddate:'2026-06-04',status:'With Presales',deadline:'2026-06-25',subdate:'',value:0,po:'',prop:'Draft',followup:'2026-06-18',notes:''},
+    {id:4,ref:'INQ-2026-004',date:'2026-06-08',desc:'Smart building IoT proposal',by:'Aldar Properties',nx:'Lina Suarez',presales:'',fwddate:'',status:'New',deadline:'2026-06-30',subdate:'',value:0,po:'',prop:'',followup:'',notes:'Awaiting assignment'},
+    {id:5,ref:'INQ-2026-005',date:'2026-06-10',desc:'Data center cooling solution',by:'Dubai Holding',nx:'Priya Nair',presales:'Omar Siddiqui',fwddate:'2026-06-11',status:'With Presales',deadline:'2026-07-05',subdate:'',value:67000,po:'',prop:'Under review',followup:'2026-06-20',notes:''},
+  ];
+}
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let currentYear = new Date().getFullYear();
+let editId = null;
+let filterStatus = '';
+let filterNX = '';
+let filterClient = '';
+let chartInstances = {};
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const STATUSES = ['New','With Presales','Submitted','Won','Lost'];
+const PO_OPTS = ['','Pending','PO Received','On Hold'];
+const PROP_OPTS = ['','Draft','Under review','Approved','Sent to client','Revision requested','Final'];
+
+function getData() { return loadData(currentYear); }
+function mutate(fn) { const d = getData(); fn(d); saveData(currentYear, d); }
+
+// ── UTILS ────────────────────────────────────────────────────────────────────
+function fmtDate(d) { if(!d)return'—'; const p=d.split('-'); return `${p[2]}/${p[1]}/${p[0].slice(2)}`; }
+function cls(s) { return (s||'').replace(/ /g,'-'); }
+function esc(s) { return (s||'').replace(/"/g,'&quot;'); }
+
+function deadlineInfo(deadline, status) {
+  if (!deadline) return { text: '—', flag: '' };
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(deadline);
+  const diff = Math.ceil((d - today) / 86400000);
+  const done = ['Won','Lost','Submitted'].includes(status);
+  let flag = '';
+  if (!done && diff < 0) flag = `<span class="deadline-red">&#9888; ${Math.abs(diff)}d passed</span>`;
+  else if (!done && diff <= 5) flag = `<span class="deadline-amber">&#9201; ${diff}d left</span>`;
+  return { text: fmtDate(deadline), flag };
+}
+
+// ── YEAR ─────────────────────────────────────────────────────────────────────
+function changeYear(d) {
+  currentYear += d;
+  document.getElementById('yearLabel').textContent = currentYear;
+  renderAll();
+}
+
+// ── STATS ────────────────────────────────────────────────────────────────────
+function renderStats() {
+  const data = getData().filter(r => (!filterStatus||r.status===filterStatus)&&(!filterNX||r.nx===filterNX)&&(!filterClient||r.by===filterClient));
+  const total = data.length;
+  const won = data.filter(r=>r.status==='Won').length;
+  const open = data.filter(r=>['New','With Presales'].includes(r.status)).length;
+  const pending = data.filter(r=>r.po==='Pending').length;
+  const wr = total > 0 ? Math.round(won/total*100) : 0;
+  const totalVal = data.reduce((s,r)=>s+(parseFloat(r.value)||0),0);
+  const valStr = totalVal>=1e6 ? 'AED '+(totalVal/1e6).toFixed(1)+'M' : totalVal>=1000 ? 'AED '+(totalVal/1000).toFixed(0)+'K' : 'AED '+totalVal;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total</div><div class="stat-val">${total}</div></div>
+    <div class="stat-card"><div class="stat-label">Open</div><div class="stat-val c-blue">${open}</div></div>
+    <div class="stat-card"><div class="stat-label">PO Pending</div><div class="stat-val c-amber">${pending}</div></div>
+    <div class="stat-card"><div class="stat-label">Won</div><div class="stat-val c-green">${won}</div></div>
+    <div class="stat-card"><div class="stat-label">Win Rate</div><div class="stat-val c-purple">${wr}%</div></div>
+    <div class="stat-card"><div class="stat-label">Pipeline Value</div><div class="stat-val c-teal">${valStr}</div></div>`;
+}
+
+// ── FILTERS ──────────────────────────────────────────────────────────────────
+function refreshFilters() {
+  const data = getData();
+  const nxSel = document.getElementById('filterNX');
+  const clientSel = document.getElementById('filterClient');
+  const nxVals = [...new Set(data.map(r=>r.nx).filter(Boolean))].sort();
+  const clientVals = [...new Set(data.map(r=>r.by).filter(Boolean))].sort();
+  nxSel.innerHTML = '<option value="">All NX employees</option>' + nxVals.map(v=>`<option ${v===filterNX?'selected':''}>${v}</option>`).join('');
+  clientSel.innerHTML = '<option value="">All clients</option>' + clientVals.map(v=>`<option ${v===filterClient?'selected':''}>${v}</option>`).join('');
+}
+
+// ── TABLE ────────────────────────────────────────────────────────────────────
+function renderTable() {
+  const rows = getData().filter(r =>
+    (!filterStatus||r.status===filterStatus) &&
+    (!filterNX||r.nx===filterNX) &&
+    (!filterClient||r.by===filterClient)
+  );
+  if (!rows.length) {
+    document.getElementById('tbody').innerHTML = `<tr class="empty-row"><td colspan="13">No inquiries for ${currentYear}. <button class="btn btn-accent" onclick="openModal()" style="margin-left:10px">+ Add first</button></td></tr>`;
+    return;
+  }
+  document.getElementById('tbody').innerHTML = rows.map(r => {
+    const dl = deadlineInfo(r.deadline, r.status);
+    const sOpts = STATUSES.map(s=>`<option value="${s}" ${s===r.status?'selected':''}>${s}</option>`).join('');
+    const pOpts = PO_OPTS.map(s=>`<option value="${s}" ${s===r.po?'selected':''}>${s||'—'}</option>`).join('');
+    const prOpts = PROP_OPTS.map(s=>`<option value="${s}" ${s===r.prop?'selected':''}>${s||'—'}</option>`).join('');
+    return `<tr class="data-row" ondblclick="editEntry(${r.id})">
+      <td><strong>${r.ref}</strong></td>
+      <td>${fmtDate(r.date)}</td>
+      <td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(r.desc)}">${r.desc||'—'}</td>
+      <td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(r.by)}">${r.by||'—'}</td>
+      <td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.nx||'<span style="color:var(--muted)">—</span>'}</td>
+      <td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.presales||'<span style="color:var(--muted)">—</span>'}</td>
+      <td>${fmtDate(r.fwddate)}</td>
+      <td onclick="event.stopPropagation()">
+        <select class="inline-sel s-${cls(r.status)}" onchange="updateField(${r.id},'status',this.value,this,'s-')">${sOpts}</select>
+      </td>
+      <td>${dl.text}${dl.flag}</td>
+      <td>${fmtDate(r.subdate)}</td>
+      <td>${r.value?`<span class="val-chip">AED ${Number(r.value).toLocaleString()}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
+      <td onclick="event.stopPropagation()">
+        <select class="inline-sel pr-${cls(r.prop)}" onchange="updateField(${r.id},'prop',this.value,this,'pr-')">${prOpts}</select>
+      </td>
+      <td onclick="event.stopPropagation()">
+        <select class="inline-sel po-${cls(r.po)}" onchange="updateField(${r.id},'po',this.value,this,'po-')">${pOpts}</select>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function updateField(id, field, value, selEl, prefix) {
+  mutate(data => { const r = data.find(x=>x.id===id); if(r) r[field] = value; });
+  const old = [...selEl.classList].find(c=>c.startsWith(prefix));
+  if (old) selEl.classList.remove(old);
+  selEl.classList.add(prefix + cls(value));
+  renderStats(); renderAlerts();
+}
+
+// ── ALERTS ───────────────────────────────────────────────────────────────────
+function renderAlerts() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const soon = new Date(today); soon.setDate(soon.getDate()+7);
+  const data = getData();
+  const dlPassed = data.filter(r=>r.deadline&&!['Won','Lost','Submitted'].includes(r.status)&&new Date(r.deadline)<today);
+  const dlSoon   = data.filter(r=>{if(!r.deadline||['Won','Lost','Submitted'].includes(r.status))return false;const d=new Date(r.deadline);return d>=today&&d<=soon;});
+  const followOD = data.filter(r=>r.followup&&!['Won','Lost'].includes(r.status)&&new Date(r.followup)<today);
+  const unassign = data.filter(r=>!r.presales&&r.status==='New');
+  const cnt = dlPassed.length+dlSoon.length+followOD.length+unassign.length;
+  const badge = document.getElementById('alertBadge');
+  badge.textContent = cnt; badge.style.display = cnt ? 'inline' : 'none';
+
+  const makeCard = (r, accent, extra) => `
+    <div class="alert-card" style="border-left-color:${accent}">
+      <div class="alert-card-left">
+        <div class="alert-card-title">${r.ref} — ${r.by||'—'}</div>
+        <div class="alert-card-sub">${extra} &nbsp;·&nbsp; ${r.nx||''} &nbsp;·&nbsp; Presales: ${r.presales||'—'}</div>
+      </div>
+      <button class="btn btn-accent" style="flex-shrink:0;margin-left:12px" onclick="editEntry(${r.id})">Open</button>
+    </div>`;
+
+  let html = '';
+  if (dlPassed.length) html += `<div class="alert-group"><div class="alert-section-title" style="color:#C0392B">&#9888; Submission Deadline Passed (${dlPassed.length})</div>${dlPassed.map(r=>makeCard(r,'#C0392B','Deadline was: '+fmtDate(r.deadline))).join('')}</div>`;
+  if (dlSoon.length)   html += `<div class="alert-group"><div class="alert-section-title" style="color:#E67E22">&#9201; Deadline Within 7 Days (${dlSoon.length})</div>${dlSoon.map(r=>makeCard(r,'#E67E22','Deadline: '+fmtDate(r.deadline))).join('')}</div>`;
+  if (followOD.length) html += `<div class="alert-group"><div class="alert-section-title" style="color:#534AB7">&#9679; Overdue Follow-ups (${followOD.length})</div>${followOD.map(r=>makeCard(r,'#7F77DD','Follow-up due: '+fmtDate(r.followup))).join('')}</div>`;
+  if (unassign.length) html += `<div class="alert-group"><div class="alert-section-title" style="color:#0F6E56">&#9654; Unassigned New Inquiries (${unassign.length})</div>${unassign.map(r=>makeCard(r,'#1D9E75','Received: '+fmtDate(r.date))).join('')}</div>`;
+  if (!html) html = `<div style="text-align:center;padding:3rem;color:var(--muted)">&#10003; All clear for ${currentYear} — no alerts</div>`;
+  document.getElementById('alertsContent').innerHTML = html;
+}
+
+// ── CHARTS ───────────────────────────────────────────────────────────────────
+function renderCharts() {
+  const data = getData();
+  const sc = {New:0,'With Presales':0,Submitted:0,Won:0,Lost:0};
+  data.forEach(r=>{if(sc[r.status]!==undefined)sc[r.status]++;});
+  const mc = Array(12).fill(0), mv = Array(12).fill(0);
+  data.forEach(r=>{
+    if(r.date){const m=parseInt(r.date.split('-')[1])-1;if(m>=0&&m<12)mc[m]++;}
+    if(r.value&&r.subdate){const m=parseInt(r.subdate.split('-')[1])-1;if(m>=0&&m<12)mv[m]+=parseFloat(r.value)||0;}
+  });
+  const colors = ['#2E75B6','#7F77DD','#E67E22','#375623','#C0392B'];
+  const keys = Object.keys(sc), vals = Object.values(sc);
+  ['status','win','month','value'].forEach(k=>{if(chartInstances[k]){chartInstances[k].destroy();chartInstances[k]=null;}});
+  document.getElementById('statusLegend').innerHTML = keys.map((k,i)=>`<div class="legend-item"><span class="legend-dot" style="background:${colors[i]}"></span>${k} (${vals[i]})</div>`).join('');
+  chartInstances.status = new Chart(document.getElementById('statusChart'),{type:'doughnut',data:{labels:keys,datasets:[{data:vals,backgroundColor:colors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'62%'}});
+  const won=sc['Won'],lost=sc['Lost'];
+  document.getElementById('winLegend').innerHTML=`<div class="legend-item"><span class="legend-dot" style="background:#375623"></span>Won (${won})</div><div class="legend-item"><span class="legend-dot" style="background:#C0392B"></span>Lost (${lost})</div>`;
+  chartInstances.win = new Chart(document.getElementById('winChart'),{type:'bar',data:{labels:['Won','Lost'],datasets:[{data:[won,lost],backgroundColor:['#375623','#C0392B'],borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:'#EBF3FB'}},x:{grid:{display:false}}}}});
+  chartInstances.month = new Chart(document.getElementById('monthChart'),{type:'bar',data:{labels:MONTHS,datasets:[{label:'Inquiries',data:mc,backgroundColor:'#2E75B6',borderWidth:0,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:'#EBF3FB'}},x:{grid:{display:false}}}}});
+  chartInstances.value = new Chart(document.getElementById('valueChart'),{type:'bar',data:{labels:MONTHS,datasets:[{label:'AED',data:mv,backgroundColor:'#1D9E75',borderWidth:0,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#EBF3FB'},ticks:{callback:v=>v>=1000?'AED '+(v/1000).toFixed(0)+'K':'AED '+v}},x:{grid:{display:false}}}}});
+}
+
+// ── TABS ─────────────────────────────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if (name==='charts') renderCharts();
+  if (name==='alerts') renderAlerts();
+}
+
+// ── MODAL ────────────────────────────────────────────────────────────────────
+function openModal(clear=true) {
+  if (clear) {
+    editId = null;
+    document.getElementById('modal-title').textContent = 'New Inquiry — ' + currentYear;
+    ['f-ref','f-by','f-nx','f-desc','f-presales','f-notes','f-followup','f-value','f-fwddate','f-deadline','f-date','f-subdate'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('f-status').value='New';
+    document.getElementById('f-po').value='';
+    document.getElementById('f-prop').value='';
+    document.getElementById('deleteBtn').style.display='none';
+  }
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+function editEntry(id) {
+  const r = getData().find(x=>x.id===id); if(!r) return;
+  editId = id;
+  document.getElementById('modal-title').textContent = r.ref + ' — ' + (r.by||'Details');
+  document.getElementById('f-ref').value = r.ref;
+  document.getElementById('f-date').value = r.date;
+  document.getElementById('f-desc').value = r.desc||'';
+  document.getElementById('f-by').value = r.by;
+  document.getElementById('f-nx').value = r.nx||'';
+  document.getElementById('f-presales').value = r.presales;
+  document.getElementById('f-fwddate').value = r.fwddate||'';
+  document.getElementById('f-status').value = r.status;
+  document.getElementById('f-deadline').value = r.deadline||'';
+  document.getElementById('f-subdate').value = r.subdate;
+  document.getElementById('f-value').value = r.value||'';
+  document.getElementById('f-po').value = r.po;
+  document.getElementById('f-prop').value = r.prop;
+  document.getElementById('f-followup').value = r.followup||'';
+  document.getElementById('f-notes').value = r.notes;
+  document.getElementById('deleteBtn').style.display='inline-flex';
+  openModal(false);
+}
+
+function saveEntry() {
+  const entry = {
+    ref:      document.getElementById('f-ref').value || ('INQ-'+currentYear+'-'+(Date.now()%1000)),
+    date:     document.getElementById('f-date').value,
+    desc:     document.getElementById('f-desc').value,
+    by:       document.getElementById('f-by').value,
+    nx:       document.getElementById('f-nx').value,
+    presales: document.getElementById('f-presales').value,
+    fwddate:  document.getElementById('f-fwddate').value,
+    status:   document.getElementById('f-status').value,
+    deadline: document.getElementById('f-deadline').value,
+    subdate:  document.getElementById('f-subdate').value,
+    value:    parseFloat(document.getElementById('f-value').value)||0,
+    po:       document.getElementById('f-po').value,
+    prop:     document.getElementById('f-prop').value,
+    followup: document.getElementById('f-followup').value,
+    notes:    document.getElementById('f-notes').value,
+  };
+  mutate(data => {
+    if (editId) { const idx = data.findIndex(x=>x.id===editId); data[idx]={...entry,id:editId}; }
+    else data.push({...entry, id:Date.now()});
+  });
+  closeModal(); renderAll();
+}
+
+function deleteEntry() {
+  if (!editId) return;
+  if (!confirm('Delete this inquiry? This cannot be undone.')) return;
+  mutate(data => { const idx = data.findIndex(x=>x.id===editId); if(idx>-1) data.splice(idx,1); });
+  closeModal(); renderAll();
+}
+
+// ── EXPORT ───────────────────────────────────────────────────────────────────
+function exportCSV() {
+  const rows = getData();
+  if (!rows.length) { alert('No data to export for '+currentYear); return; }
+  const headers = ['Ref','Received Date','Inquiry Description','Client Name','NX Employee','Pre Sales','Presales Fwd Date','Status','Submission Deadline','Submitted Date','Commercial Value (AED)','Proposal Status','PO Status','Follow-up Due','Notes'];
+  const csv = [headers.join(','), ...rows.map(r=>[r.ref,r.date,`"${r.desc||''}"`,`"${r.by}"`,`"${r.nx||''}"`,`"${r.presales}"`,r.fwddate,r.status,r.deadline||'',r.subdate,r.value,r.prop,r.po,r.followup,`"${r.notes}"`].join(','))].join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=`proposals_${currentYear}.csv`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── RENDER ALL ───────────────────────────────────────────────────────────────
+function renderAll() { refreshFilters(); renderStats(); renderTable(); renderAlerts(); }
+
+document.getElementById('modal').addEventListener('click', e => { if(e.target===document.getElementById('modal')) closeModal(); });
+renderAll();
+</script>
+</body>
+</html>
